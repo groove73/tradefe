@@ -23,7 +23,7 @@ export type StockData = {
     listShrs: string;
 };
 
-const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export async function fetchMarketData(date: string = '20241227', type: string = 'KOSPI'): Promise<MarketData[]> {
     try {

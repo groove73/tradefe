@@ -17,7 +17,7 @@ export type CommodityTradingInfo = {
     wtDisAvgPrc?: string;
 };
 
-const API_BASE_URL = 'http://localhost:8080/api/commodities';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/commodities`;
 
 export async function fetchCommodityTradingInfo(marketType: string, basDd: string): Promise<CommodityTradingInfo[]> {
     try {

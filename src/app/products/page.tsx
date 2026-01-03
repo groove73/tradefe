@@ -23,7 +23,7 @@ export default function ProductsPage() {
         try {
             const formattedDate = format(selectedDate, "yyyyMMdd")
             const endpoint = type.toLowerCase()
-            const response = await fetch(`http://localhost:8080/api/${endpoint}/trading-info?basDd=${formattedDate}`)
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/${endpoint}/trading-info?basDd=${formattedDate}`)
             const result = await response.json()
             setData(result)
         } catch (error) {

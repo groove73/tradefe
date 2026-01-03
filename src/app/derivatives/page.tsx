@@ -27,7 +27,7 @@ export default function DerivativesPage() {
         setIsLoading(true)
         try {
             const formattedDate = format(selectedDate, "yyyyMMdd")
-            const response = await fetch(`http://localhost:8080/api/derivatives/trading-info/${type}?basDd=${formattedDate}`)
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/derivatives/trading-info/${type}?basDd=${formattedDate}`)
             const result = await response.json()
             setData(result)
         } catch (error) {

@@ -25,7 +25,7 @@ export default function BondsPage() {
         setIsLoading(true)
         try {
             const formattedDate = format(selectedDate, "yyyyMMdd")
-            const response = await fetch(`http://localhost:8080/api/bond/trading-info/${type}?basDd=${formattedDate}`)
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/bond/trading-info/${type}?basDd=${formattedDate}`)
             const result = await response.json()
             setData(result)
         } catch (error) {

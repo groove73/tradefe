@@ -5,7 +5,9 @@ import { fetchStockData, StockData } from '@/lib/api';
 import { StockTable } from '@/components/StockTable';
 import { useQueryState, parseAsString } from 'nuqs';
 
-export default function StocksPage() {
+import { Suspense } from 'react';
+
+function StocksContent() {
     const getYesterdayDateString = () => {
         const date = new Date();
         date.setDate(date.getDate() - 1);
@@ -118,5 +120,13 @@ export default function StocksPage() {
                 )}
             </section>
         </div>
+    );
+}
+
+export default function StocksPage() {
+    return (
+        <Suspense fallback={<div className="container mx-auto py-12 px-4 max-w-6xl animate-pulse">Loading...</div>}>
+            <StocksContent />
+        </Suspense>
     );
 }

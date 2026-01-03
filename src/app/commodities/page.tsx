@@ -18,7 +18,9 @@ const marketTypes = [
     { id: 'ETS', name: '배출권시장', icon: Leaf, color: 'text-emerald-500', bg: 'bg-emerald-50' },
 ];
 
-export default function CommoditiesPage() {
+import { Suspense } from 'react';
+
+function CommoditiesContent() {
     const [marketType, setMarketType] = useQueryState('market', parseAsString.withDefault('GOLD'));
     const [date, setDate] = useState<Date>(subDays(startOfToday(), 1));
     const [data, setData] = useState<CommodityTradingInfo[]>([]);
@@ -125,5 +127,13 @@ export default function CommoditiesPage() {
                 </>
             )}
         </div>
+    );
+}
+
+export default function CommoditiesPage() {
+    return (
+        <Suspense fallback={<div className="container mx-auto py-12 px-4 max-w-6xl animate-pulse">Loading...</div>}>
+            <CommoditiesContent />
+        </Suspense>
     );
 }

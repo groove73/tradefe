@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/DatePicker"
 import { BondTradingInfoTable } from "@/components/bonds/BondTradingInfoTable"
@@ -11,7 +11,7 @@ type MarketType = 'TREASURY' | 'GENERAL' | 'SMALL'
 
 export default function BondsPage() {
     const [marketType, setMarketType] = useState<MarketType>('TREASURY')
-    const [date, setDate] = useState<Date | undefined>(new Date())
+    const [date, setDate] = useState<Date | undefined>(subDays(new Date(), 1))
     const [data, setData] = useState([])
     const [isLoading, setIsLoading] = useState(false)
 

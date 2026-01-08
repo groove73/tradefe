@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/DatePicker"
 import { DerivativesTradingInfoTable } from "@/components/derivatives/DerivativesTradingInfoTable"
@@ -13,7 +13,7 @@ type MarketType = 'FUT_NORMAL' | 'FUT_STK_KOSPI' | 'FUT_STK_KOSDAQ' | 'OPT_NORMA
 export default function DerivativesPage() {
     const [marketGroup, setMarketGroup] = useState<MarketGroup>('FUT')
     const [marketType, setMarketType] = useState<MarketType>('FUT_NORMAL')
-    const [date, setDate] = useState<Date | undefined>(new Date())
+    const [date, setDate] = useState<Date | undefined>(subDays(new Date(), 1))
     const [data, setData] = useState([])
     const [isLoading, setIsLoading] = useState(false)
 

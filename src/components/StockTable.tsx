@@ -1,38 +1,42 @@
-'use client';
-
 import { StockData } from '@/lib/api';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 
-type StockTableProps = {
+export interface StockTableProps {
     data: StockData[];
-};
+    isLoading?: boolean;
+}
 
-export function StockTable({ data }: StockTableProps) {
+export function StockTable({ data, isLoading = false }: StockTableProps) {
     const [sortKey, setSortKey] = useState<keyof StockData>('isuNm');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const sortedData = [...data].sort((a, b) => {
-        const valA = a[sortKey];
-        const valB = b[sortKey];
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [data]);
 
-        const isNumeric = !isNaN(Number(valA.replace(/,/g, ''))) && !isNaN(Number(valB.replace(/,/g, '')));
+    const formatNumber = (value: string | undefined) => {
+        if (value === undefined || value === null || value === '') return '-'
+        return new Intl.NumberFormat('ko-KR').format(Number(value.replace(/,/g, '')))
+    }
 
-        if (isNumeric) {
-            const numA = Number(valA.replace(/,/g, ''));
-            const numB = Number(valB.replace(/,/g, ''));
-            return sortOrder === 'asc' ? numA - numB : numB - numA;
-        }
-
-        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
-    });
-
-    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+    const getPriceColor = (valStr: string | undefined) => {
+        if (!valStr) return "text-gray-900"
+        const val = parseFloat(valStr)
+        if (val > 0) return "text-red-500"
+        if (val < 0) return "text-blue-500"
+        return "text-gray-900"
+    }
 
     const handleSort = (key: keyof StockData) => {
         if (sortKey === key) {
@@ -48,97 +52,120 @@ export function StockTable({ data }: StockTableProps) {
         return <span className="text-indigo-600 ml-1">{sortOrder === 'asc' ? '▲' : '▼'}</span>;
     };
 
+    const sortedData = [...data].sort((a, b) => {
+        const valA = a[sortKey] || '';
+        const valB = b[sortKey] || '';
+
+        const isNumeric = !isNaN(Number(valA.toString().replace(/,/g, ''))) && !isNaN(Number(valB.toString().replace(/,/g, '')));
+
+        if (isNumeric) {
+            const numA = Number(valA.toString().replace(/,/g, ''));
+            const numB = Number(valB.toString().replace(/,/g, ''));
+            return sortOrder === 'asc' ? numA - numB : numB - numA;
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+        )
+    }
+
+    if (!data || data.length === 0) {
+        return (
+            <div className="text-center py-20 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                조회된 데이터가 없습니다.
+            </div>
+        )
+    }
+
     return (
-        <div className="w-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <div className="w-full bg-white rounded-[2rem] shadow-2xl border border-indigo-100/50 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-900 border-b border-gray-800">
-                                {[
-                                    { label: '종목명', key: 'isuNm' },
-                                    { label: '종목코드', key: 'isuCd' },
-                                    { label: '시장', key: 'mktNm' },
-                                    { label: '종가', key: 'tddClsprc' },
-                                    { label: '등락률', key: 'flucRt' },
-                                    { label: '거래량', key: 'accTrdvol' },
-                                    { label: '시가총액', key: 'mktcap' },
-                                ].map((col) => (
-                                    <th
-                                        key={col.key}
-                                        className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] cursor-pointer hover:text-white transition-colors"
-                                        onClick={() => handleSort(col.key as keyof StockData)}
-                                    >
-                                        <div className="flex items-center">
-                                            {col.label}
-                                            <SortIcon columnKey={col.key as keyof StockData} />
-                                        </div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {paginatedData.map((stock, i) => (
-                                <tr key={`${stock.isuCd}-${i}`} className="hover:bg-indigo-50/30 transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black text-gray-900 group-hover:text-indigo-600 transition-colors">{stock.isuNm}</span>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stock.sectTpNm}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <code className="text-[10px] font-black bg-gray-100 px-2 py-1 rounded text-gray-600">{stock.isuCd}</code>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[10px] font-black px-2 py-1 rounded-full ${stock.mktNm === 'KOSPI' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                            {stock.mktNm}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-black text-gray-900 font-mono">
-                                            {Number(stock.tddClsprc).toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-sm font-black flex items-center gap-1 ${Number(stock.flucRt) > 0 ? 'text-rose-600' : Number(stock.flucRt) < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
-                                            {Number(stock.flucRt) > 0 ? '▲' : Number(stock.flucRt) < 0 ? '▼' : ''}
-                                            {Math.abs(Number(stock.flucRt))}%
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-bold text-gray-500 font-mono">
-                                            {Number(stock.accTrdvol).toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-black text-gray-900">
-                                            {Math.round(Number(stock.mktcap) / 100000000).toLocaleString()}억
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                {data.length === 0 && (
-                    <div className="p-20 text-center bg-gray-50/50">
-                        <p className="text-gray-400 font-bold uppercase tracking-widest">데이터가 없습니다.</p>
-                    </div>
-                )}
+        <div className="flex flex-col gap-6">
+            <div className="rounded-xl border border-gray-100 overflow-hidden shadow-sm bg-white">
+                <Table>
+                    <TableHeader className="bg-gray-50/50">
+                        <TableRow>
+                            <TableHead className="font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('isuNm')}>
+                                <div className="flex items-center">종목명 <SortIcon columnKey="isuNm" /></div>
+                            </TableHead>
+                            <TableHead className="font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('isuCd')}>
+                                <div className="flex items-center">종목코드 <SortIcon columnKey="isuCd" /></div>
+                            </TableHead>
+                            <TableHead className="font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('mktNm')}>
+                                <div className="flex items-center">시장 <SortIcon columnKey="mktNm" /></div>
+                            </TableHead>
+                            <TableHead className="text-right font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('tddClsprc')}>
+                                <div className="flex items-center justify-end">종가 <SortIcon columnKey="tddClsprc" /></div>
+                            </TableHead>
+                            <TableHead className="text-right font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('flucRt')}>
+                                <div className="flex items-center justify-end">등락률 <SortIcon columnKey="flucRt" /></div>
+                            </TableHead>
+                            <TableHead className="text-right font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('accTrdvol')}>
+                                <div className="flex items-center justify-end">거래량 <SortIcon columnKey="accTrdvol" /></div>
+                            </TableHead>
+                            <TableHead className="text-right font-bold text-gray-900 cursor-pointer" onClick={() => handleSort('mktcap')}>
+                                <div className="flex items-center justify-end">시가총액(억) <SortIcon columnKey="mktcap" /></div>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {paginatedData.map((stock, i) => (
+                            <TableRow key={`${stock.isuCd}-${i}`} className="hover:bg-gray-50/50 transition-colors">
+                                <TableCell className="font-medium">
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-900 font-bold">{stock.isuNm}</span>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stock.sectTpNm}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="font-mono text-xs text-gray-500 font-bold">
+                                    {stock.isuCd}
+                                </TableCell>
+                                <TableCell>
+                                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${stock.mktNm === 'KOSPI' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                        {stock.mktNm}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-right font-black font-mono text-gray-900">
+                                    {formatNumber(stock.tddClsprc)}
+                                </TableCell>
+                                <TableCell className={`text-right font-bold font-mono ${getPriceColor(stock.flucRt)}`}>
+                                    <div className="flex items-center justify-end gap-1">
+                                        {Number(stock.flucRt) > 0 ? '▲' : Number(stock.flucRt) < 0 ? '▼' : ''} {Math.abs(Number(stock.flucRt))}%
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right text-gray-400 font-bold font-mono text-xs">
+                                    {formatNumber(stock.accTrdvol)}
+                                </TableCell>
+                                <TableCell className="text-right text-gray-600 font-bold font-mono text-xs">
+                                    {formatNumber(Math.floor(Number(stock.mktcap.replace(/,/g, '')) / 100000000).toString())}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
 
             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pb-10">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                <div className="flex items-center justify-center gap-2 mt-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-500 disabled:hover:border-gray-200 transition-all shadow-sm"
+                        className="font-bold text-gray-400 hover:text-indigo-600"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-
+                        이전
+                    </Button>
                     <div className="flex items-center gap-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                             .filter(page => Math.abs(page - currentPage) <= 2 || page === 1 || page === totalPages)
@@ -147,29 +174,27 @@ export function StockTable({ data }: StockTableProps) {
                                     {i > 0 && arr[i - 1] !== page - 1 && (
                                         <span className="px-2 text-gray-400">...</span>
                                     )}
-                                    <button
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? "default" : "ghost"}
+                                        size="sm"
                                         onClick={() => setCurrentPage(page)}
-                                        className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${currentPage === page
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110'
-                                            : 'bg-white border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 shadow-sm'
-                                            }`}
+                                        className={`w-8 h-8 p-0 font-bold ${currentPage === page ? 'bg-indigo-600' : 'text-gray-400'}`}
                                     >
                                         {page}
-                                    </button>
+                                    </Button>
                                 </div>
-                            ))
-                        }
+                            ))}
                     </div>
-
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                         disabled={currentPage === totalPages}
-                        className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-gray-500 disabled:hover:border-gray-200 transition-all shadow-sm"
+                        className="font-bold text-gray-400 hover:text-indigo-600"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                    </button>
+                        다음
+                    </Button>
                 </div>
             )}
         </div>

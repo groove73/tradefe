@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { DatePicker } from "@/components/ui/DatePicker"
 import { Button } from "@/components/ui/button"
 import { EtfTradingInfoTable } from "@/components/products/EtfTradingInfoTable"
+import { ProductSummaryCards } from "@/components/products/ProductSummaryCards"
 
 export default function ProductsPage() {
     const [productType, setProductType] = useState<'ETF' | 'ETN' | 'ELW'>('ETF')
-    const [date, setDate] = useState<Date | undefined>(new Date())
+    const [date, setDate] = useState<Date | undefined>(subDays(new Date(), 1))
     const [data, setData] = useState([])
     const [isLoading, setIsLoading] = useState(false)
 
@@ -48,6 +49,8 @@ export default function ProductsPage() {
                     {productType === 'ELW' ? '주식워런트증권(ELW)' : `상장지수상품(${productType})`}의 일자별 매매 데이터를 조회합니다. 기준일자를 선택하여 상세 거래 내역을 확인하세요.
                 </p>
             </header>
+
+            <ProductSummaryCards data={data} productType={productType} />
 
             <section className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-gray-100 p-8">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100/50">
